@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Node Server</title>
+</head>
+<body>
+    <h1>Node + Express Server is Working!</h1>
+    <button onclick="getMessage()">Get Message from Server</button>
+
+    <p id="msg"></p>
+
+    <script>
+        function getMessage() {
+            fetch('/api/message')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('msg').innerText = data.message;
+                });
+        }
+    </script>
+</body>
+</html>
