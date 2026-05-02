@@ -1,80 +1,72 @@
 const express = require('express');
+
 const app = express();
-
-app.use(express.json());
-
 const PORT = 5000;
-
-// In-memory data (acts like database)
-let students = [
-    { id: 1, name: "Arun", age: 20, dept: "CSE" },
-    { id: 2, name: "Meena", age: 21, dept: "ECE" }
-];
 
 // Home route
 app.get('/', (req, res) => {
-    res.send("Student REST API is running");
+    res.send("Vehicle Scheduler Running ✅");
 });
 
-// GET all students
-app.get('/students', (req, res) => {
-    res.status(200).json(students);
-});
+// Schedule route
+app.get('/schedule', (req, res) => {
 
-// GET student by ID
-app.get('/students/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const student = students.find(s => s.id === id);
+    const capacity = 60;
 
-    if (!student) {
-        return res.status(404).json({ message: "Student not found" });
+    const tasks = [
+        { TaskID: 1, Duration: 10, Impact: 60 },
+        { TaskID: 2, Duration: 20, Impact: 100 },
+        { TaskID: 3, Duration: 30, Impact: 120 },
+        { TaskID: 4, Duration: 25, Impact: 90 },
+        { TaskID: 5, Duration: 15, Impact: 70 }
+    ];
+
+    function knapsack(tasks, capacity) {
+        const n = tasks.length;
+        const dp = Array(n + 1).fill().map(() => Array(capacity + 1).fill(0));
+
+        for (let i = 1; i <= n; i++) {
+            const { Duration, Impact } = tasks[i - 1];
+
+            for (let w = 0; w <= capacity; w++) {
+                if (Duration <= w) {
+                    dp[i][w] = Math.max(
+                        dp[i - 1][w],
+                        dp[i - 1][w - Duration] + Impact
+                    );
+                } else {
+                    dp[i][w] = dp[i - 1][w];
+                }
+            }
+        }
+
+        let w = capacity;
+        const selected = [];
+
+        for (let i = n; i > 0; i--) {
+            if (dp[i][w] !== dp[i - 1][w]) {
+                selected.push(tasks[i - 1]);
+                w -= tasks[i - 1].Duration;
+            }
+        }
+
+        return {
+            totalImpact: dp[n][capacity],
+            selectedTasks: selected.reverse()
+        };
     }
 
-    res.status(200).json(student);
+    const result = knapsack(tasks, capacity);
+
+    res.json({
+        message: "Schedule generated ✅",
+        capacity,
+        totalImpact: result.totalImpact,
+        selectedTasks: result.selectedTasks
+    });
 });
 
-// POST add new student
-app.post('/students', (req, res) => {
-    const { id, name, age, dept } = req.body;
-
-    if (students.find(s => s.id === id)) {
-        return res.status(400).json({ message: "ID already exists" });
-    }
-
-    students.push({ id, name, age, dept });
-    res.status(201).json({ message: "Student added", students });
-});
-
-// PUT update student
-app.put('/students/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const student = students.find(s => s.id === id);
-
-    if (!student) {
-        return res.status(404).json({ message: "Student not found" });
-    }
-
-    const { name, age, dept } = req.body;
-    student.name = name || student.name;
-    student.age = age || student.age;
-    student.dept = dept || student.dept;
-
-    res.status(200).json({ message: "Student updated", student });
-});
-
-// DELETE student
-app.delete('/students/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const index = students.findIndex(s => s.id === id);
-
-    if (index === -1) {
-        return res.status(404).json({ message: "Student not found" });
-    }
-
-    students.splice(index, 1);
-    res.status(200).json({ message: "Student deleted", students });
-});
-
+// Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
